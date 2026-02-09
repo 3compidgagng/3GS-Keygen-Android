@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Setup Java 17
+      # 1. Setup Java
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -25,13 +25,13 @@ jobs:
         with:
           python-version: '3.10'
 
-      # 3. Setup Linux Deps
+      # 3. Setup Linux
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev mesa-utils
 
-      # 4. Setup Flutter Manual
+      # 4. Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -42,36 +42,26 @@ jobs:
         run: |
           yes | flutter doctor --android-licenses
 
-      # 6. Install Flet (buat server)
+      # 6. Install Flet
+      # Kita cuma butuh 'requests' (buat internet) dan 'flet'
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install flet pyaes
+          pip install flet requests
 
-      # 7. PERSIAPAN HYBRID (SOLUSI PINTAR) 🧠
-      # - Pyaes: Kita 'Vendor' (Copy folder) karena dia Pure Python & susah di-download di Android build.
-      # - Flet & Certifi: Kita tulis di requirements.txt biar Build Tool yang install versi Android-nya.
+      # 7. Persiapan Folder (SANGAT SIMPEL SEKARANG)
+      # Tidak perlu copy-copy folder manual lagi.
+      # Cukup tulis di requirements.txt, nanti Flet yang urus sisanya.
       - name: Prepare Project Structure
         run: |
           mkdir -p keygen_app
           mv main.py keygen_app/
           
-          # A. VENDOR PYAES SAJA (JANGAN FLET!)
-          # Kita download pyaes ke folder keygen_app
-          pip install pyaes --target=keygen_app/
-          
-          # B. BUAT REQUIREMENTS UNTUK FLET & CERTIFI
-          # Flet Build akan membaca ini dan menginstall Flet versi Android secara otomatis
+          # Catat library yang dibutuhkan APK
           echo "flet" > keygen_app/requirements.txt
-          echo "certifi" >> keygen_app/requirements.txt
-          
-          # Cek Folder
-          echo "Isi Folder:"
-          ls -F keygen_app/
-          echo "Isi Requirements:"
-          cat keygen_app/requirements.txt
+          echo "requests" >> keygen_app/requirements.txt
 
-      # 8. BUILD APK
+      # 8. Build APK
       - name: Build APK
         run: |
           flet build apk keygen_app --verbose
@@ -80,6 +70,6 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: keygen-3gs
+          name: keygen-3gs-online
           path: keygen_app/build/apk/**/*.apk
           if-no-files-found: warn
