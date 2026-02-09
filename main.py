@@ -4,9 +4,8 @@ import pyaes
 import asyncio
 
 # ==========================================
-# KONFIGURASI KEAMANAN (SAMA PERSIS DENGAN PC)
+# KONFIGURASI KEAMANAN
 # ==========================================
-# Pastikan ini Byte Literal (b'...') agar sama dengan PC
 SECRET_KEY = b'rahasia2021Angga' 
 IV = b'InitializationVe'          
 
@@ -14,29 +13,32 @@ class Security:
     @staticmethod
     def encrypt_license(hwid):
         try:
-            # 1. Bersihkan Input (Hapus spasi depan/belakang)
-            # Seringkali hasil beda karena ada spasi yang tidak sengaja ter-copy
-            text = hwid.strip()
+            # 1. PEMBERSIH SUPER (Anti Karakter Hantu) 🧹
+            # Kita paksa buang spasi, tab, enter, dan karakter aneh
+            # HWID biasanya cuma huruf dan angka, jadi aman.
+            text = hwid.strip().replace('\r', '').replace('\n', '').replace(' ', '')
+            
+            # Debugging: Print ke terminal (kalau ada) untuk cek
+            print(f"DEBUG: Teks bersih = '{text}' (Panjang: {len(text)})")
+            
             data_bytes = text.encode('utf-8')
 
-            # 2. Padding PKCS7 Manual (Meniru logic Cryptodome.Util.Padding.pad)
-            # Ini memastikan hasil matematika-nya 100% sama dengan versi PC
+            # 2. Padding PKCS7 Manual
             block_size = 16
             padding_len = block_size - (len(data_bytes) % block_size)
             padding = bytes([padding_len] * padding_len)
             padded_data = data_bytes + padding
 
-            # 3. Enkripsi AES CBC Mode
-            # Kita buat objek baru setiap kali encrypt agar IV reset
+            # 3. Enkripsi AES CBC
             aes = pyaes.AESModeOfOperationCBC(SECRET_KEY, iv=IV)
             encrypter = pyaes.Encrypter(aes)
             
             ciphertext = encrypter.feed(padded_data)
             ciphertext += encrypter.feed() # Finalize
             
-            return base64.b64encode(ciphertext).decode('utf-8')
+            return base64.b64encode(ciphertext).decode('utf-8'), text
         except Exception as e:
-            return f"Error: {str(e)}"
+            return f"Error: {str(e)}", ""
 
 def main(page: ft.Page):
     # --- SETUP TAMPILAN ---
@@ -48,49 +50,50 @@ def main(page: ft.Page):
     page.window_height = 700
     page.padding = 20
     
-    # Warna Tema (Samakan Nuansa dengan PC)
-    NEON_GREEN = "#B9F01D" # Warna aksen hijau
-    DARK_BG = "#2b2b2b" 
+    NEON_GREEN = "#B9F01D"
     BLUE_BTN = "#00BFFF"
     
     # --- FUNGSI LOGIC ---
     async def generate_click(e):
-        # Validasi Input
         if not txt_hwid.value:
-            txt_hwid.error_text = "HWID tidak boleh kosong!"
+            txt_hwid.error_text = "HWID kosong!"
             page.update()
             return
 
-        # 1. UI FEEDBACK: Ubah tombol jadi "Memproses..." biar user sabar
-        btn_generate.text = "Memproses..."
+        # UI Loading
+        btn_generate.text = "⏳ Memproses..."
         btn_generate.disabled = True
         txt_hwid.error_text = None
+        txt_debug.value = "Memulai..." # Reset debug
         page.update()
 
-        # Beri jeda sedikit agar UI sempat ter-update sebelum proses berat dimulai
+        # Jeda biar UI ngerender dulu
         await asyncio.sleep(0.1) 
 
-        # 2. PROSES ENKRIPSI
-        # Kita panggil logic keamanan
-        license_key = Security.encrypt_license(txt_hwid.value)
+        # PROSES ENKRIPSI
+        # Kita terima 2 hasil: Lisensi & Teks Bersih (buat debug)
+        license_key, clean_text = Security.encrypt_license(txt_hwid.value)
         
-        # 3. TAMPILKAN HASIL
+        # TAMPILKAN HASIL
         txt_result.value = license_key
         
-        # Kembalikan tombol seperti semula
+        # TAMPILKAN INFO DEBUG (Penting buat cek kenapa beda)
+        txt_debug.value = f"Input Bersih: '{clean_text}'\nPanjang Karakter: {len(clean_text)}"
+        
+        # Reset Tombol
         btn_generate.text = "GENERATE LISENSI"
         btn_generate.disabled = False
         
         page.show_snack_bar(
-            ft.SnackBar(content=ft.Text("Lisensi Berhasil Dibuat!"), bgcolor="green")
+            ft.SnackBar(content=ft.Text("Selesai!"), bgcolor="green")
         )
         page.update()
 
     async def paste_click(e):
         clipboard_text = await page.get_clipboard()
         if clipboard_text:
-            # Otomatis strip spasi saat paste
-            clean_text = clipboard_text.strip()
+            # Langsung bersihkan saat paste
+            clean_text = clipboard_text.strip().replace('\r', '').replace('\n', '')
             txt_hwid.value = clean_text
             txt_hwid.error_text = None
             page.show_snack_bar(ft.SnackBar(content=ft.Text("HWID Ditempel!")))
@@ -99,53 +102,25 @@ def main(page: ft.Page):
     def copy_click(e):
         if txt_result.value:
             page.set_clipboard(txt_result.value)
-            page.show_snack_bar(ft.SnackBar(content=ft.Text("Disalin ke Clipboard!")))
-        else:
-             page.show_snack_bar(ft.SnackBar(content=ft.Text("Belum ada lisensi!"), bgcolor="red"))
+            page.show_snack_bar(ft.SnackBar(content=ft.Text("Disalin!")))
 
-    # --- KOMPONEN UI (LAYOUT) ---
+    # --- KOMPONEN UI ---
     
-    # Judul
     lbl_title = ft.Text("PES21 KEY-GENERATOR", size=24, weight="bold", color=NEON_GREEN)
-    lbl_subtitle = ft.Text("KHUSUS ADMIN/PENJUAL", size=12, color="grey")
-
-    # Input HWID
+    
     txt_hwid = ft.TextField(
         label="HWID Pengguna",
-        hint_text="Tempel HWID disini...",
+        hint_text="Tempel HWID...",
         text_align=ft.TextAlign.CENTER,
         border_color=NEON_GREEN,
         bgcolor="#4a4a4a",
-        text_size=14,
-        focused_border_color=NEON_GREEN,
+        text_size=14
     )
 
-    # Tombol Paste
-    btn_paste = ft.ElevatedButton(
-        "Tempel dari Clipboard",
-        icon="paste",
-        on_click=paste_click,
-        bgcolor=NEON_GREEN,
-        color="black",
-        width=280,
-        height=45
-    )
+    btn_paste = ft.ElevatedButton("Tempel Clipboard", icon="paste", on_click=paste_click, bgcolor=NEON_GREEN, color="black", width=280)
 
-    # Tombol Generate
-    btn_generate = ft.ElevatedButton(
-        "GENERATE LISENSI",
-        icon="vpn_key",
-        on_click=generate_click,
-        bgcolor=BLUE_BTN,
-        color="black",
-        width=280,
-        height=60, # Tombol besar seperti di PC
-        style=ft.ButtonStyle(
-            shape=ft.RoundedRectangleBorder(radius=15),
-        )
-    )
+    btn_generate = ft.ElevatedButton("GENERATE LISENSI", icon="vpn_key", on_click=generate_click, bgcolor=BLUE_BTN, color="black", width=280, height=50)
 
-    # Output Hasil
     txt_result = ft.TextField(
         label="Hasil Lisensi",
         read_only=True,
@@ -155,47 +130,39 @@ def main(page: ft.Page):
         border_color=BLUE_BTN,
     )
 
-    # Tombol Copy
-    btn_copy = ft.ElevatedButton(
-        "SALIN LISENSI",
-        icon="copy",
-        on_click=copy_click,
-        bgcolor=NEON_GREEN,
-        color="black",
-        width=280,
-        height=50
+    # INFO DEBUG (Supaya Mas bisa cek inputnya benar/salah)
+    txt_debug = ft.Text(
+        "Info Debug akan muncul disini...",
+        size=12,
+        color="orange",
+        text_align=ft.TextAlign.CENTER,
+        italic=True
     )
 
-    # Copyright
-    lbl_copy = ft.Text("© 2026 - 3GS Patch", size=10, color="grey")
+    btn_copy = ft.ElevatedButton("SALIN LISENSI", icon="copy", on_click=copy_click, bgcolor=NEON_GREEN, color="black", width=280)
 
-    # Menyusun Widget
     page.add(
         ft.Column(
             [
                 ft.Container(height=10),
                 lbl_title,
-                lbl_subtitle,
+                ft.Text("KHUSUS ADMIN", size=12, color="grey"),
                 ft.Container(height=20),
-                
-                ft.Text("Masukan HWID Pengguna :", color="white"),
                 txt_hwid,
                 btn_paste,
-                
                 ft.Container(height=20),
                 btn_generate,
-                ft.Container(height=20),
-                
-                ft.Text("Kode Lisensi (Hasil) :", color="white"),
+                ft.Container(height=10),
+                txt_debug, # <--- Posisi Debug Info
+                ft.Container(height=10),
                 txt_result,
                 btn_copy,
-                
                 ft.Container(height=30),
-                lbl_copy
+                ft.Text("© 2026 - 3GS Patch", size=10, color="grey")
             ],
             alignment="center",
             horizontal_alignment="center",
-            scroll="adaptive" # Biar bisa di-scroll kalau layar HP kecil
+            scroll="adaptive"
         )
     )
 
