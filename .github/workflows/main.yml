@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Setup Java 17
+      # 1. Setup Java 17 (Wajib)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -31,32 +31,23 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev mesa-utils
 
-      # 4. Setup Flutter (KITA KUNCI DI VERSI 3.24.0 BIAR STABIL)
-      # Jangan pakai 'stable' karena bisa dapet versi yang terlalu baru (3.38.x)
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.0'
+      # 4. HAPUS SETUP FLUTTER MANUAL (Subosito)
+      # Kita hapus langkah "Setup Flutter" biar Flet download sendiri versi 3.38.7 yang dia mau.
+      # Biar gak bentrok versi lagi.
 
-      # 5. TERIMA LISENSI (DENGAN PENGAMAN '|| true')
-      # Kita tambah '|| true' di belakang. 
-      # Artinya: Kalau 'yes' error (broken pipe), ABAIKAN SAJA, LANJUT TERUS!
-      - name: Accept Android Licenses
-        run: |
-          yes | flutter doctor --android-licenses || true
-
-      # 6. Install Flet
+      # 5. Install Flet
       - name: Install Dependencies
         run: |
           pip install flet pycryptodome
 
-      # 7. BUILD APK (BERSIH)
-      # Flet akan jalan lancar karena Flutter 3.24.0 pasti cocok.
+      # 6. BUILD APK DENGAN "Y" YANG SOPAN
+      # "yes | head -n 20" artinya: Jawab "y" 20 kali saja, lalu diam.
+      # Ini menjawab pertanyaan install, tapi tidak bikin error Broken Pipe.
       - name: Build APK
         run: |
-          flet build apk --verbose
+          yes | head -n 20 | flet build apk --verbose
 
-      # 8. Upload Hasil
+      # 7. Upload Hasil
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
