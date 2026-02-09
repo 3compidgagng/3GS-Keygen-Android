@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Setup Java 17
+      # 1. Setup Java 17 (Wajib)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -31,15 +31,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev mesa-utils
 
-      # 4. Install Flet (Untuk jalanin build)
-      # Kita install pyaes juga disini biar Python server kenal.
+      # 4. TERIMA LISENSI ANDROID (INI SOLUSINYA!) 🛡️
+      # Kita pakai sdkmanager bawaan Android untuk menyetujui semua lisensi
+      # SEBELUM Flet berjalan. Jadi pas Flet jalan, pintunya sudah terbuka.
+      - name: Accept Android Licenses
+        run: |
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      # 5. Install Flet & Pyaes
       - name: Install Dependencies
         run: |
           pip install flet pyaes
 
-      # 5. PERSIAPAN FOLDER & REQUIREMENTS BARU (PYAES) 📝
-      # Perhatikan: Kita menulis 'pyaes' ke requirements.txt
-      # Pyaes itu murni python, jadi PASTI masuk ke APK tanpa error.
+      # 6. PERSIAPAN FOLDER & REQUIREMENTS (Pyaes) 📝
+      # Kita pakai pyaes (murni python) biar tidak error ModuleNotFound
       - name: Prepare Project Structure
         run: |
           mkdir -p keygen_app
@@ -50,13 +55,14 @@ jobs:
           echo "Isi requirements.txt:"
           cat keygen_app/requirements.txt
 
-      # 6. BUILD APK
-      # Flet akan membaca requirements.txt dan membungkus pyaes ke dalam APK.
+      # 7. BUILD APK
+      # Karena lisensi sudah diterima di langkah 4, Flet akan lancar.
+      # Kita tetap pakai 'yes' jaga-jaga kalau dia minta download Flutter Engine.
       - name: Build APK
         run: |
           yes | flet build apk keygen_app --verbose || true
 
-      # 7. Upload Hasil
+      # 8. Upload Hasil
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
