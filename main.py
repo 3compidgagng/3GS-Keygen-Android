@@ -1,19 +1,29 @@
 import flet as ft
 import base64
-from Crypto.Cipher import AES 
-from Crypto.Util.Padding import pad
+import pyaes  # <--- Kita pakai library ini, lebih aman buat Android
 
 # === KONFIGURASI KEAMANAN ===
-SECRET_KEY = bytes([114, 97, 104, 97, 115, 105, 97, 50, 48, 50, 49, 65, 110, 103, 103, 97])
-IV = bytes([73, 110, 105, 116, 105, 97, 108, 105, 122, 97, 116, 105, 111, 110, 86, 101])
+SECRET_KEY = bytes([114, 97, 104, 97, 115, 105, 97, 50, 48, 50, 49, 65, 110, 103, 103, 97]) # rahasia2021Angga
+IV = bytes([73, 110, 105, 116, 105, 97, 108, 105, 122, 97, 116, 105, 111, 110, 86, 101])     # InitializationVe
 
 class Security:
     @staticmethod
     def encrypt_license(hwid):
         try:
-            cipher = AES.new(SECRET_KEY, AES.MODE_CBC, IV)
-            padded_hwid = pad(hwid.encode('utf-8'), AES.block_size)
-            encrypted = cipher.encrypt(padded_hwid)
+            # 1. Padding Manual (PKCS7) - Pengganti pad() dari Crypto
+            block_size = 16
+            data_bytes = hwid.encode('utf-8')
+            padding_len = block_size - (len(data_bytes) % block_size)
+            padding = bytes([padding_len] * padding_len)
+            padded_data = data_bytes + padding
+
+            # 2. Enkripsi pakai Pyaes (Pure Python)
+            aes = pyaes.AESModeOfOperationCBC(SECRET_KEY, iv=IV)
+            encrypter = pyaes.Encrypter(aes)
+            
+            encrypted = encrypter.feed(padded_data)
+            encrypted += encrypter.feed() # Finalize
+            
             return base64.b64encode(encrypted).decode('utf-8')
         except Exception as e:
             return f"Error: {str(e)}"
@@ -27,7 +37,7 @@ def main(page: ft.Page):
     page.window_width = 400
     page.window_height = 700
     
-    # Warna Tema (Hex Code manual biar aman)
+    # Warna Tema
     NEON_GREEN = "#B9F01D"
     DARK_BG = "#263238" 
     BLUE_BTN = "#2196F3"
@@ -62,35 +72,35 @@ def main(page: ft.Page):
         else:
              page.show_snack_bar(ft.SnackBar(content=ft.Text("Belum ada lisensi!"), bgcolor="red"))
 
-    # --- KOMPONEN UI (FIX ICON ERROR) ---
+    # --- KOMPONEN UI ---
     
     # 1. Judul
     lbl_title = ft.Text("3GS KEY GENERATOR", size=24, weight="bold", color=NEON_GREEN)
     lbl_subtitle = ft.Text("Khusus Admin/Penjual", size=12, color="grey")
 
-    # 2. Input HWID (Icon pakai string kecil "fingerprint")
+    # 2. Input HWID
     txt_hwid = ft.TextField(
         label="Tempel HWID Pembeli",
         hint_text="Tempel di sini...",
-        icon="fingerprint",  # <--- SUDAH DIPERBAIKI
+        icon="fingerprint",
         border_color=NEON_GREEN,
         focused_border_color=NEON_GREEN,
     )
 
-    # 3. Tombol Paste (Icon "paste")
+    # 3. Tombol Paste
     btn_paste = ft.ElevatedButton(
         "Tempel dari Clipboard",
-        icon="paste",  # <--- SUDAH DIPERBAIKI
+        icon="paste",
         on_click=paste_click,
         bgcolor=DARK_BG,
         color="white",
         width=280
     )
 
-    # 4. Tombol Generate (Icon "key")
+    # 4. Tombol Generate
     btn_generate = ft.ElevatedButton(
         "GENERATE LISENSI",
-        icon="key",  # <--- SUDAH DIPERBAIKI
+        icon="key",
         on_click=generate_click,
         bgcolor=NEON_GREEN,
         color="black",
@@ -99,19 +109,19 @@ def main(page: ft.Page):
         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10))
     )
 
-    # 5. Output Hasil (Icon "lock_open")
+    # 5. Output Hasil
     txt_result = ft.TextField(
         label="Hasil Lisensi",
         read_only=True,
         multiline=True,
-        icon="lock_open",  # <--- SUDAH DIPERBAIKI
+        icon="lock_open",
         border_color=BLUE_BTN,
     )
 
-    # 6. Tombol Copy (Icon "copy")
+    # 6. Tombol Copy
     btn_copy = ft.ElevatedButton(
         "Salin Lisensi",
-        icon="copy",  # <--- SUDAH DIPERBAIKI
+        icon="copy",
         on_click=copy_click,
         bgcolor=BLUE_BTN,
         color="white",
