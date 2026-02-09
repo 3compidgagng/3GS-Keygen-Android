@@ -46,24 +46,24 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install flet pyaes
+          pip install flet pyaes certifi
 
-      # 7. PERSIAPAN: DOWNLOAD PYAES & MASUKKAN KE FOLDER (SOLUSI TITIP BARANG) 📦
-      # Kita pakai 'pip install --target' untuk menaruh library LANGSUNG di sebelah main.py
-      # Jadi APK tidak perlu download apa-apa lagi.
+      # 7. PERSIAPAN: DOWNLOAD LIBRARY & MASUKKAN KE FOLDER 📦
+      # KITA TAMBAHKAN 'certifi' DISINI!
+      # Jadi kita bawa 'pyaes' DAN 'certifi' mentah-mentah ke dalam APK.
       - name: Prepare Project Structure
         run: |
           mkdir -p keygen_app
           mv main.py keygen_app/
           
-          # INI TRIKNYA: Download pyaes dan taruh fisiknya di dalam folder project
-          pip install pyaes --target=keygen_app/
+          # INI KUNCINYA: Download pyaes DAN certifi, lalu taruh di dalam folder project
+          pip install pyaes certifi --target=keygen_app/
           
           # Requirements kita kosongkan saja (karena barangnya sudah ada di dalam)
           touch keygen_app/requirements.txt
           
-          # Cek biar yakin folder 'pyaes' sudah masuk
-          echo "Isi folder keygen_app (Harus ada folder pyaes):"
+          # Cek biar yakin folder library sudah masuk
+          echo "Isi folder keygen_app:"
           ls -R keygen_app
 
       # 8. BUILD APK
