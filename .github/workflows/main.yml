@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      # 3. Setup Linux Deps
+      # 3. Setup Komponen Linux
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update
@@ -46,25 +46,30 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install flet pyaes certifi
+          pip install flet pyaes certifi packaging
 
-      # 7. PERSIAPAN: DOWNLOAD LIBRARY & MASUKKAN KE FOLDER 📦
-      # KITA TAMBAHKAN 'certifi' DISINI!
-      # Jadi kita bawa 'pyaes' DAN 'certifi' mentah-mentah ke dalam APK.
+      # 7. PERSIAPAN: VENDORING SEMUA LIBRARY (FLET + PYAES + CERTIFI) 📦
+      # Kita masukkan 'flet' juga ke sini biar tidak ModuleNotFound lagi.
+      # Kita pakai '--no-deps' untuk flet biar gak terlalu bengkak, tapi yang penting 'flet' ada.
+      # TAPI biar aman, kita install normal saja:
       - name: Prepare Project Structure
         run: |
           mkdir -p keygen_app
           mv main.py keygen_app/
           
-          # INI KUNCINYA: Download pyaes DAN certifi, lalu taruh di dalam folder project
-          pip install pyaes certifi --target=keygen_app/
+          # INI SOLUSINYA: Kita download FLET, PYAES, dan CERTIFI langsung ke folder aplikasi.
+          # Jadi APK tidak perlu nyari-nyari lagi, semua sudah ada di dalam.
+          pip install flet pyaes certifi packaging --target=keygen_app/
           
-          # Requirements kita kosongkan saja (karena barangnya sudah ada di dalam)
+          # Bersihkan file sampah (kadang pip bawa folder bin)
+          rm -rf keygen_app/bin
+          
+          # Requirements dikosongkan (karena barangnya sudah kita masukkan manual)
           touch keygen_app/requirements.txt
           
-          # Cek biar yakin folder library sudah masuk
-          echo "Isi folder keygen_app:"
-          ls -R keygen_app
+          # Cek isi folder (pastikan ada folder 'flet', 'pyaes', dll)
+          echo "CEK ISI FOLDER:"
+          ls -F keygen_app/
 
       # 8. BUILD APK
       - name: Build APK
