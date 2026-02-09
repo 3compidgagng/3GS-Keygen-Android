@@ -26,7 +26,6 @@ jobs:
           python-version: '3.10'
 
       # 3. Setup Komponen Linux (Biar Doctor Bersih Total)
-      # Saya tambah mesa-utils biar warning 'eglinfo' hilang
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update
