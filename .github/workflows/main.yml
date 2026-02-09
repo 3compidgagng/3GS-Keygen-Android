@@ -12,33 +12,37 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Siapkan Python
+      # 1. Siapkan Java (Wajib buat Android)
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 2. Siapkan Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      # 2. Siapkan Flutter (Mesin Utama Flet)
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          flutter-version: '3.19.0' # Versi stabil
-
-      # 3. Install Flet & Library Lain
+      # 3. Install Flet
       - name: Install Dependencies
         run: |
           pip install flet pycryptodome
 
-      # 4. Build APK (Perintah Ajaib Flet)
-      # Flet akan otomatis mendownload SDK Android yang dibutuhkan
+      # 4. Build APK dengan "Auto-Yes"
+      # Kita pakai 'yes |' di depan perintah.
+      # Artinya: "Jawab YES kalau ada pertanyaan apapun".
       - name: Build APK
         run: |
-          flet build apk --verbose
+          yes | flet build apk --verbose
 
       # 5. Upload Hasil APK
+      # Flet biasanya menaruh hasil di folder 'dist' atau root, kita cari semua .apk
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: keygen-3gs
-          path: build/apk/app-release.apk
+          path: |
+            build/apk/**/*.apk
+            *.apk
