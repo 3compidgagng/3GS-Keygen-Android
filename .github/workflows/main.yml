@@ -5,18 +5,18 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # Pakai mesin paling baru (Cepat)
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4  # Update ke v4 (Terbaru)
+      - uses: actions/checkout@v4
 
       # 1. Siapkan Python
       - name: Set up Python
-        uses: actions/setup-python@v5  # Update ke v5 (Terbaru)
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10' # Kita naikkan dikit ke 3.10 biar lancar di Ubuntu baru
+          python-version: '3.10'
 
-      # 2. Install Buildozer & Dependencies
+      # 2. Install Dependencies (Disesuaikan untuk Ubuntu Latest)
       - name: Install Dependencies
         run: |
           sudo apt-get update
@@ -35,7 +35,12 @@ jobs:
             libswscale-dev \
             libavformat-dev \
             libavcodec-dev \
-            zlib1g-dev
+            zlib1g-dev \
+            libffi-dev \
+            libssl-dev \
+            autoconf \
+            libtool \
+            pkg-config
           pip install --upgrade pip
           pip install buildozer cython==0.29.33
 
@@ -44,9 +49,9 @@ jobs:
         run: |
           yes | buildozer android debug
 
-      # 4. Upload APK Hasilnya (INI YANG TADI ERROR)
+      # 4. Upload APK Hasilnya
       - name: Upload APK
-        uses: actions/upload-artifact@v4  # <--- SUDAH DIGANTI KE V4 (AMAN)
+        uses: actions/upload-artifact@v4
         with:
           name: package
           path: bin/*.apk
