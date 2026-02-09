@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1. SETUP JAVA 11 (WAJIB)
+      # 1. SETUP JAVA 11 (Wajib untuk Android API 31)
       - name: Set up Java 11
         uses: actions/setup-java@v4
         with:
@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.9'
 
-      # 3. INSTALL DEPENDENCIES
+      # 3. INSTALL DEPENDENCIES LINUX
       - name: Install Dependencies
         run: |
           sudo apt-get update
@@ -36,36 +36,54 @@ jobs:
           pip install --upgrade pip
           pip install buildozer "Cython==3.0.11"
 
-      # 4. BUILD PANCINGAN (ANTI BROKEN PIPE)
-      # Kita ganti 'yes |' dengan 'echo "y" |'.
-      # Ini akan memancing download SDK, lalu membiarkan dia error dengan tenang.
-      - name: Initial Build (Download SDK)
-        continue-on-error: true
+      # 4. INSTALL ANDROID SDK MANUALLY (INI KUNCINYA!)
+      # Kita download SDK sendiri biar pasti ada dan lengkap.
+      - name: Install Android SDK & Build Tools
         run: |
-          echo "y" | buildozer android debug || true
+          echo "Creating SDK directories..."
+          mkdir -p $HOME/.buildozer/android/platform/android-sdk/cmdline-tools
+          
+          echo "Downloading Command Line Tools..."
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O sdk-tools.zip
+          unzip -q sdk-tools.zip -d $HOME/.buildozer/android/platform/android-sdk/cmdline-tools
+          
+          # Rename folder agar sesuai standar Google
+          mv $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/cmdline-tools $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          rm sdk-tools.zip
+          
+          # Setup PATH sementara untuk install tools
+          export PATH=$PATH:$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin
+          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          
+          echo "Installing Build Tools & Platform..."
+          # Kita install Build Tools 34.0.0 (yang pasti punya d8 tapi gapunya dx)
+          yes | sdkmanager "platform-tools" "platforms;android-31" "build-tools;34.0.0"
 
-      # 5. FIX ERROR "DX MISSING"
-      # Bagian ini yang paling penting. Dia akan memperbaiki SDK yang error tadi.
-      - name: Fix Android SDK Bugs
+      # 5. FIX ERROR "DX MISSING" (SEKARANG PASTI BERHASIL)
+      # Karena SDK sudah diinstall di langkah 4, file d8 pasti ada.
+      - name: Fix Android SDK Bugs (Create DX from D8)
         run: |
-          echo "Mencari folder build-tools..."
-          # Cari d8 di folder buildozer dan buat duplikat bernama dx
-          find $HOME/.buildozer/android/platform/android-sdk/build-tools -name "d8" | while read f; do \
+          echo "Fixing missing dx binary..."
+          SDK_DIR=$HOME/.buildozer/android/platform/android-sdk
+          
+          # Cari d8 di folder build-tools dan copy jadi dx
+          find $SDK_DIR/build-tools -name "d8" | while read f; do \
               dx_path="$(dirname "$f")/dx"; \
               if [ ! -f "$dx_path" ]; then \
-                  echo "Memperbaiki: Membuat dx dari $f ke $dx_path"; \
+                  echo "Creating dx symlink/copy at $dx_path"; \
                   cp "$f" "$dx_path"; \
               fi; \
           done
           
-          # Paksa Terima Lisensi
-          echo "Menerima Lisensi..."
-          yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses || true
+          # Terima lisensi sekali lagi biar aman
+          export PATH=$PATH:$SDK_DIR/cmdline-tools/latest/bin
+          yes | sdkmanager --licenses || true
 
       # 6. BUILD FINAL (APLIKASI JADI)
-      # Sekarang dx sudah ada, build ini pasti sukses.
       - name: Final Build
         run: |
+          # Kita paksa Buildozer pakai SDK yang sudah kita install
+          export P4A_SDK_DIR=$HOME/.buildozer/android/platform/android-sdk
           yes | buildozer android debug
 
       # 7. UPLOAD APK
