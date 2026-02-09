@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Setup Java 17 (Wajib)
+      # 1. Setup Java 17
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -31,20 +31,27 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev mesa-utils
 
-      # 4. TERIMA LISENSI ANDROID (INI SOLUSINYA!) 🛡️
-      # Kita pakai sdkmanager bawaan Android untuk menyetujui semua lisensi
-      # SEBELUM Flet berjalan. Jadi pas Flet jalan, pintunya sudah terbuka.
+      # 4. SETUP FLUTTER MANUAL (PAKE SUBOSITO)
+      # Kita install Flutter di awal biar kita bisa atur lisensinya.
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # 5. TERIMA LISENSI SECARA PAKSA (SOLUSI UTAMA) 🛡️
+      # Karena Flutter sudah diinstall di langkah 4, perintah ini PASTI jalan.
+      # Ini akan menghilangkan error "Licenses not accepted".
       - name: Accept Android Licenses
         run: |
-          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | flutter doctor --android-licenses
 
-      # 5. Install Flet & Pyaes
+      # 6. Install Flet & Pyaes
       - name: Install Dependencies
         run: |
+          pip install --upgrade pip
           pip install flet pyaes
 
-      # 6. PERSIAPAN FOLDER & REQUIREMENTS (Pyaes) 📝
-      # Kita pakai pyaes (murni python) biar tidak error ModuleNotFound
+      # 7. PERSIAPAN FOLDER
       - name: Prepare Project Structure
         run: |
           mkdir -p keygen_app
@@ -52,17 +59,16 @@ jobs:
           echo "pyaes" > keygen_app/requirements.txt
           
           # Cek isinya
-          echo "Isi requirements.txt:"
           cat keygen_app/requirements.txt
 
-      # 7. BUILD APK
-      # Karena lisensi sudah diterima di langkah 4, Flet akan lancar.
-      # Kita tetap pakai 'yes' jaga-jaga kalau dia minta download Flutter Engine.
+      # 8. BUILD APK (BERSIH TANPA 'YES')
+      # Karena lisensi sudah beres di langkah 5, kita TIDAK BUTUH 'yes |' lagi.
+      # Ini mencegah error "Broken Pipe".
       - name: Build APK
         run: |
-          yes | flet build apk keygen_app --verbose || true
+          flet build apk keygen_app --verbose
 
-      # 8. Upload Hasil
+      # 9. Upload Hasil
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
