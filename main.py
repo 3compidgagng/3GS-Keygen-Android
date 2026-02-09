@@ -3,9 +3,7 @@ import base64
 import pyaes
 import asyncio
 
-# ==========================================
-# KONFIGURASI KEAMANAN
-# ==========================================
+# --- KONFIGURASI KEAMANAN (WAJIB SAMA DENGAN PC) ---
 SECRET_KEY = b'rahasia2021Angga' 
 IV = b'InitializationVe'          
 
@@ -13,17 +11,15 @@ class Security:
     @staticmethod
     def encrypt_license(hwid):
         try:
-            # 1. PEMBERSIH SUPER (Anti Karakter Hantu) 🧹
-            # Kita paksa buang spasi, tab, enter, dan karakter aneh
-            # HWID biasanya cuma huruf dan angka, jadi aman.
-            text = hwid.strip().replace('\r', '').replace('\n', '').replace(' ', '')
+            # 1. PEMBERSIH SUPER AGRESIF 🧹
+            # Kita buang spasi ( ), Enter (\n), Tab (\t), dan Carriage Return (\r)
+            # Ini kuncinya biar hasilnya sama dengan PC!
+            clean_text = "".join(hwid.split()) 
             
-            # Debugging: Print ke terminal (kalau ada) untuk cek
-            print(f"DEBUG: Teks bersih = '{text}' (Panjang: {len(text)})")
-            
-            data_bytes = text.encode('utf-8')
+            # Ubah ke bytes
+            data_bytes = clean_text.encode('utf-8')
 
-            # 2. Padding PKCS7 Manual
+            # 2. Padding PKCS7 Manual (Standar Industri)
             block_size = 16
             padding_len = block_size - (len(data_bytes) % block_size)
             padding = bytes([padding_len] * padding_len)
@@ -36,7 +32,7 @@ class Security:
             ciphertext = encrypter.feed(padded_data)
             ciphertext += encrypter.feed() # Finalize
             
-            return base64.b64encode(ciphertext).decode('utf-8'), text
+            return base64.b64encode(ciphertext).decode('utf-8'), clean_text
         except Exception as e:
             return f"Error: {str(e)}", ""
 
@@ -46,63 +42,58 @@ def main(page: ft.Page):
     page.theme_mode = "dark" 
     page.vertical_alignment = "center"
     page.horizontal_alignment = "center"
-    page.window_width = 400
-    page.window_height = 700
-    page.padding = 20
+    # Scroll diset 'auto' biar kalau keyboard muncul, layar bisa digeser
+    page.scroll = "auto" 
     
     NEON_GREEN = "#B9F01D"
     BLUE_BTN = "#00BFFF"
     
-    # --- FUNGSI LOGIC ---
+    # --- LOGIC APLIKASI ---
     async def generate_click(e):
         if not txt_hwid.value:
             txt_hwid.error_text = "HWID kosong!"
             page.update()
             return
 
-        # UI Loading
-        btn_generate.text = "⏳ Memproses..."
+        # Tampilkan Loading
+        btn_generate.text = "⏳ SEDANG MEMPROSES..."
         btn_generate.disabled = True
-        txt_hwid.error_text = None
-        txt_debug.value = "Memulai..." # Reset debug
+        txt_result.value = "Mohon tunggu..."
         page.update()
 
-        # Jeda biar UI ngerender dulu
+        # Jeda dikit biar UI ngerender
         await asyncio.sleep(0.1) 
 
-        # PROSES ENKRIPSI
-        # Kita terima 2 hasil: Lisensi & Teks Bersih (buat debug)
-        license_key, clean_text = Security.encrypt_license(txt_hwid.value)
+        # Proses Enkripsi
+        license_key, debug_text = Security.encrypt_license(txt_hwid.value)
         
-        # TAMPILKAN HASIL
+        # Tampilkan Hasil
         txt_result.value = license_key
         
-        # TAMPILKAN INFO DEBUG (Penting buat cek kenapa beda)
-        txt_debug.value = f"Input Bersih: '{clean_text}'\nPanjang Karakter: {len(clean_text)}"
-        
-        # Reset Tombol
+        # Info Debug (Buat ngecek apa yang sebenernya dienkripsi)
+        lbl_debug.value = f"Data yang dienkripsi: '{debug_text}'"
+
+        # Balikin Tombol
         btn_generate.text = "GENERATE LISENSI"
         btn_generate.disabled = False
         
-        page.show_snack_bar(
-            ft.SnackBar(content=ft.Text("Selesai!"), bgcolor="green")
-        )
+        page.show_snack_bar(ft.SnackBar(content=ft.Text("Selesai!")))
         page.update()
 
     async def paste_click(e):
         clipboard_text = await page.get_clipboard()
         if clipboard_text:
-            # Langsung bersihkan saat paste
-            clean_text = clipboard_text.strip().replace('\r', '').replace('\n', '')
-            txt_hwid.value = clean_text
+            # Langsung bersihkan saat ditempel
+            clean = "".join(clipboard_text.split())
+            txt_hwid.value = clean
             txt_hwid.error_text = None
             page.show_snack_bar(ft.SnackBar(content=ft.Text("HWID Ditempel!")))
             page.update()
 
     def copy_click(e):
-        if txt_result.value:
+        if txt_result.value and "Error" not in txt_result.value:
             page.set_clipboard(txt_result.value)
-            page.show_snack_bar(ft.SnackBar(content=ft.Text("Disalin!")))
+            page.show_snack_bar(ft.SnackBar(content=ft.Text("Lisensi Disalin!")))
 
     # --- KOMPONEN UI ---
     
@@ -110,14 +101,13 @@ def main(page: ft.Page):
     
     txt_hwid = ft.TextField(
         label="HWID Pengguna",
-        hint_text="Tempel HWID...",
+        hint_text="Tempel HWID disini...",
         text_align=ft.TextAlign.CENTER,
         border_color=NEON_GREEN,
-        bgcolor="#4a4a4a",
-        text_size=14
+        text_size=16
     )
 
-    btn_paste = ft.ElevatedButton("Tempel Clipboard", icon="paste", on_click=paste_click, bgcolor=NEON_GREEN, color="black", width=280)
+    btn_paste = ft.ElevatedButton("Tempel dari Clipboard", icon="paste", on_click=paste_click, bgcolor=NEON_GREEN, color="black", width=280)
 
     btn_generate = ft.ElevatedButton("GENERATE LISENSI", icon="vpn_key", on_click=generate_click, bgcolor=BLUE_BTN, color="black", width=280, height=50)
 
@@ -126,43 +116,34 @@ def main(page: ft.Page):
         read_only=True,
         multiline=True,
         text_align=ft.TextAlign.CENTER,
-        bgcolor="#4a4a4a",
         border_color=BLUE_BTN,
-    )
-
-    # INFO DEBUG (Supaya Mas bisa cek inputnya benar/salah)
-    txt_debug = ft.Text(
-        "Info Debug akan muncul disini...",
-        size=12,
-        color="orange",
-        text_align=ft.TextAlign.CENTER,
-        italic=True
+        text_size=16
     )
 
     btn_copy = ft.ElevatedButton("SALIN LISENSI", icon="copy", on_click=copy_click, bgcolor=NEON_GREEN, color="black", width=280)
 
+    lbl_debug = ft.Text("", size=10, color="grey", italic=True)
+
+    # Susun Layout
     page.add(
         ft.Column(
             [
-                ft.Container(height=10),
+                ft.Container(height=20),
                 lbl_title,
                 ft.Text("KHUSUS ADMIN", size=12, color="grey"),
-                ft.Container(height=20),
+                ft.Container(height=30),
                 txt_hwid,
                 btn_paste,
                 ft.Container(height=20),
                 btn_generate,
                 ft.Container(height=10),
-                txt_debug, # <--- Posisi Debug Info
+                lbl_debug, # Info debug muncul disini
                 ft.Container(height=10),
                 txt_result,
                 btn_copy,
-                ft.Container(height=30),
-                ft.Text("© 2026 - 3GS Patch", size=10, color="grey")
+                ft.Container(height=50),
             ],
-            alignment="center",
             horizontal_alignment="center",
-            scroll="adaptive"
         )
     )
 
