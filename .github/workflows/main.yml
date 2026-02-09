@@ -2,6 +2,7 @@ name: Build BeeWare APK
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,14 +19,29 @@ jobs:
         run: |
           pip install briefcase
           
-      - name: Build Android APK
+      # 1. Siapkan Project Android (Tanpa Build dulu)
+      - name: Create Android Project
         run: |
-          # Briefcase akan otomatis download Java & Android SDK
-          briefcase build android
-          briefcase package android
+          briefcase create android
           
+      # 2. Build APK Menggunakan Gradle (Cara Manual biar jadi APK)
+      # Briefcase menyimpan project android di folder build/
+      # Kita masuk kesana dan suruh Gradle bikin APK
+      - name: Build APK (Debug)
+        run: |
+          # Cari folder gradle (karena nama folder bisa beda2, kita pake wildcard *)
+          cd build/*/android/gradle
+          
+          # Beri izin eksekusi
+          chmod +x gradlew
+          
+          # Perintah sakti untuk bikin APK
+          ./gradlew assembleDebug
+          
+      # 3. Upload APK Hasilnya
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: keygen-beeware
-          path: dist/*.aab  # BeeWare biasanya output .aab (App Bundle) atau .apk
+          name: keygen-beeware-apk
+          # Lokasi APK biasanya ada disini setelah dibuild gradle
+          path: build/*/android/gradle/app/build/outputs/apk/debug/*.apk
