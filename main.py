@@ -1,8 +1,8 @@
 import flet as ft
-import requests # Library buat nelpon server
+import requests
 import asyncio
 
-# URL SERVER MAS YANG SUDAH AKTIF
+# Pastikan URL ini benar (sesuai yang Mas tes di browser)
 API_URL = "https://3gs21pes.pythonanywhere.com/generate"
 
 def main(page: ft.Page):
@@ -13,7 +13,6 @@ def main(page: ft.Page):
     page.horizontal_alignment = "center"
     page.scroll = "auto"
     
-    # Warna Tema
     NEON_GREEN = "#B9F01D"
     BLUE_BTN = "#00BFFF"
 
@@ -23,30 +22,43 @@ def main(page: ft.Page):
             page.update()
             return
 
-        # UI Loading (Biar user tau lagi loading)
+        # UI Loading
         btn_generate.text = "⏳ MENGHUBUNGI SERVER..."
         btn_generate.disabled = True
+        # Bersihkan pesan error sebelumnya
+        txt_result.value = "Sedang menghubungkan..." 
         page.update()
         
         try:
-            # === KIRIM HWID KE SERVER ===
-            # Timeout 10 detik biar gak nunggu kelamaan kalau sinyal jelek
-            response = requests.post(API_URL, json={"hwid": txt_hwid.value}, timeout=10)
+            # === PERUBAHAN PENTING DISINI ===
+            # verify=False : Biar Android tidak memblokir koneksi SSL/HTTPS
+            # timeout=15   : Kasih waktu lebih lama (15 detik)
+            response = requests.post(
+                API_URL, 
+                json={"hwid": txt_hwid.value}, 
+                timeout=15, 
+                verify=False
+            )
             
-            # BACA JAWABAN SERVER
-            data = response.json()
-            
-            if data['status'] == 'sukses':
-                txt_result.value = data['license']
-                page.show_snack_bar(ft.SnackBar(content=ft.Text("Sukses Dibuat!"), bgcolor="green"))
+            # Cek status kode (200 artinya OK)
+            if response.status_code == 200:
+                data = response.json()
+                if data['status'] == 'sukses':
+                    txt_result.value = data['license']
+                    page.show_snack_bar(ft.SnackBar(content=ft.Text("Sukses!"), bgcolor="green"))
+                else:
+                    txt_result.value = f"Server Menolak: {data.get('pesan')}"
             else:
-                txt_result.value = f"Error: {data.get('pesan')}"
+                txt_result.value = f"Error HTTP: {response.status_code}"
                 
         except Exception as err:
-            txt_result.value = "Gagal Koneksi Server!"
-            page.show_snack_bar(ft.SnackBar(content=ft.Text("Cek Internet Anda!"), bgcolor="red"))
+            # === TAMPILKAN ERROR ASLI BIAR KITA TAU PENYEBABNYA ===
+            error_msg = str(err)
+            print(error_msg) # Print ke log
+            txt_result.value = f"ERROR TEKNIS:\n{error_msg}"
+            page.show_snack_bar(ft.SnackBar(content=ft.Text("Gagal Koneksi"), bgcolor="red"))
 
-        # Reset UI
+        # Reset Tombol
         btn_generate.text = "GENERATE LISENSI"
         btn_generate.disabled = False
         page.update()
@@ -54,18 +66,24 @@ def main(page: ft.Page):
     async def paste_click(e):
         clip = await page.get_clipboard()
         if clip:
-            # Kita bersihkan spasi juga di HP biar rapi
-            txt_hwid.value = "".join(clip.split()) 
+            txt_hwid.value = "".join(clip.split())
             page.update()
 
     def copy_click(e):
-        if txt_result.value:
+        if txt_result.value and "ERROR" not in txt_result.value:
             page.set_clipboard(txt_result.value)
             page.show_snack_bar(ft.SnackBar(content=ft.Text("Disalin!")))
 
     # --- UI ---
     txt_hwid = ft.TextField(label="HWID", text_align=ft.TextAlign.CENTER, border_color=NEON_GREEN)
-    txt_result = ft.TextField(label="Lisensi", read_only=True, text_align=ft.TextAlign.CENTER, border_color=BLUE_BTN)
+    txt_result = ft.TextField(
+        label="Hasil Lisensi / Error", 
+        read_only=True, 
+        multiline=True, # Biar pesan error panjang bisa terbaca
+        text_align=ft.TextAlign.CENTER, 
+        border_color=BLUE_BTN,
+        text_size=12 # Kecilkan dikit biar muat
+    )
     btn_generate = ft.ElevatedButton("GENERATE LISENSI", on_click=generate_click, bgcolor=BLUE_BTN, color="black")
 
     page.add(
