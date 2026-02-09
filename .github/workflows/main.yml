@@ -46,28 +46,30 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install flet cryptography
+          pip install flet pyaes
 
-      # 7. PERSIAPAN: DOWNLOAD LIBRARY KE FOLDER 📦
-      # Kita download 'cryptography' dan 'flet' ke dalam folder.
-      # Karena cryptography ada file biner (.so), kita harap versi Linux server ini
-      # kompatibel dengan Android (ini agak gamble, tapi worth a try).
+      # 7. PERSIAPAN HYBRID (SOLUSI PINTAR) 🧠
+      # - Pyaes: Kita 'Vendor' (Copy folder) karena dia Pure Python & susah di-download di Android build.
+      # - Flet & Certifi: Kita tulis di requirements.txt biar Build Tool yang install versi Android-nya.
       - name: Prepare Project Structure
         run: |
           mkdir -p keygen_app
           mv main.py keygen_app/
           
-          # Kita coba install paket 'flet' dan 'cryptography' ke folder target
-          pip install flet cryptography --target=keygen_app/
+          # A. VENDOR PYAES SAJA (JANGAN FLET!)
+          # Kita download pyaes ke folder keygen_app
+          pip install pyaes --target=keygen_app/
           
-          # Bersihkan bin sampah
-          rm -rf keygen_app/bin
+          # B. BUAT REQUIREMENTS UNTUK FLET & CERTIFI
+          # Flet Build akan membaca ini dan menginstall Flet versi Android secara otomatis
+          echo "flet" > keygen_app/requirements.txt
+          echo "certifi" >> keygen_app/requirements.txt
           
-          # Kosongkan requirements
-          touch keygen_app/requirements.txt
-          
-          echo "Isi folder:"
+          # Cek Folder
+          echo "Isi Folder:"
           ls -F keygen_app/
+          echo "Isi Requirements:"
+          cat keygen_app/requirements.txt
 
       # 8. BUILD APK
       - name: Build APK
