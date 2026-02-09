@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04  # Kita pakai Ubuntu versi STABIL (bukan terbaru)
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
