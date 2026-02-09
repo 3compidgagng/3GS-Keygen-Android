@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      # 3. Setup Komponen Linux
+      # 3. Setup Linux Deps
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update
@@ -46,29 +46,27 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install flet pyaes certifi packaging
+          pip install flet cryptography
 
-      # 7. PERSIAPAN: VENDORING SEMUA LIBRARY (FLET + PYAES + CERTIFI) 📦
-      # Kita masukkan 'flet' juga ke sini biar tidak ModuleNotFound lagi.
-      # Kita pakai '--no-deps' untuk flet biar gak terlalu bengkak, tapi yang penting 'flet' ada.
-      # TAPI biar aman, kita install normal saja:
+      # 7. PERSIAPAN: DOWNLOAD LIBRARY KE FOLDER 📦
+      # Kita download 'cryptography' dan 'flet' ke dalam folder.
+      # Karena cryptography ada file biner (.so), kita harap versi Linux server ini
+      # kompatibel dengan Android (ini agak gamble, tapi worth a try).
       - name: Prepare Project Structure
         run: |
           mkdir -p keygen_app
           mv main.py keygen_app/
           
-          # INI SOLUSINYA: Kita download FLET, PYAES, dan CERTIFI langsung ke folder aplikasi.
-          # Jadi APK tidak perlu nyari-nyari lagi, semua sudah ada di dalam.
-          pip install flet pyaes certifi packaging --target=keygen_app/
+          # Kita coba install paket 'flet' dan 'cryptography' ke folder target
+          pip install flet cryptography --target=keygen_app/
           
-          # Bersihkan file sampah (kadang pip bawa folder bin)
+          # Bersihkan bin sampah
           rm -rf keygen_app/bin
           
-          # Requirements dikosongkan (karena barangnya sudah kita masukkan manual)
+          # Kosongkan requirements
           touch keygen_app/requirements.txt
           
-          # Cek isi folder (pastikan ada folder 'flet', 'pyaes', dll)
-          echo "CEK ISI FOLDER:"
+          echo "Isi folder:"
           ls -F keygen_app/
 
       # 8. BUILD APK
