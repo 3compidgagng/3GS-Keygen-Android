@@ -31,31 +31,31 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev mesa-utils
 
-      # 4. Install Flet
+      # 4. Install Flet (Untuk jalanin perintah build)
       - name: Install Dependencies
         run: |
           pip install flet pycryptodome
 
-      # 5. PINDAHKAN FILE KE FOLDER BARU (SOLUSI NAMA PROJECT)
-      # Kita buat folder 'keygen_app' (valid karena diawali huruf)
-      # Lalu kita masukkan main.py ke sana.
-      - name: Prepare Project Folder
+      # 5. PINDAHKAN FILE & BUAT REQUIREMENTS (INI KUNCINYA!) 🔑
+      # Kita buat folder 'keygen_app' biar namanya valid.
+      # Kita buat file 'requirements.txt' isinya 'pycryptodome'.
+      # Flet akan baca file ini dan otomatis memasukkan library Crypto ke dalam APK.
+      - name: Prepare Project
         run: |
           mkdir keygen_app
           mv main.py keygen_app/
-          # Kalau ada aset gambar, pindahkan juga disini (contoh: mv assets keygen_app/)
+          echo "pycryptodome" > keygen_app/requirements.txt
+          # Cek isinya biar yakin
+          cat keygen_app/requirements.txt
 
-      # 6. BUILD APK (DARI FOLDER keygen_app)
-      # Kita arahkan flet ke folder 'keygen_app'.
-      # Flet akan menganggap nama aplikasinya adalah 'keygen_app' (VALID!).
-      # Kita pakai 'yes' untuk auto-install Flutter SDK.
-      # Kita tambah '|| true' biar kalau ada broken pipe, dia tetep dianggap sukses.
+      # 6. BUILD APK
+      # Kita arahkan build ke folder 'keygen_app'.
+      # Flet akan melihat requirements.txt di situ dan menginstallnya ke HP.
       - name: Build APK
         run: |
           yes | flet build apk keygen_app --verbose || true
 
       # 7. Upload Hasil
-      # Perhatikan path-nya berubah ada tambahan 'keygen_app/' di depan
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
