@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Siapkan Java 17 (Standar baru Android)
+      # 1. Siapkan Java 17 (Wajib buat Android)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -25,33 +25,20 @@ jobs:
         with:
           python-version: '3.10'
 
-      # 3. Install Flutter Manual (Supaya Flet tidak download sendiri)
-      # Kita pakai versi Stable terbaru biar aman.
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          flutter-version: '3.27.0' # Versi yang support Flet terbaru
-
-      # 4. TERIMA LISENSI ANDROID (INI YANG BIKIN ERROR TADI)
-      - name: Accept Android Licenses
-        run: |
-          echo "Menyetujui Lisensi..."
-          yes | sdkmanager --licenses || true
-
-      # 5. Install Library Flet
+      # 3. Install Library Flet
       - name: Install Dependencies
         run: |
           pip install flet pycryptodome
 
-      # 6. Build APK
-      # Karena Flutter sudah diinstall di langkah 3, Flet tidak akan tanya-tanya lagi.
-      # Kita tetap pakai 'yes |' untuk jaga-jaga kalau ada konfirmasi kecil.
+      # 4. BUILD APK DENGAN "AUTO-YES" (SOLUSI ERROR TADI)
+      # Kita pakai "yes |" di depan. 
+      # Ini akan menjawab "y" terus menerus ke pertanyaan Flet.
+      # Kita hapus langkah "Setup Flutter" manual biar Flet download versi yang dia mau sendiri.
       - name: Build APK
         run: |
-          flet build apk --verbose
+          yes | flet build apk --verbose
 
-      # 7. Upload Hasil
+      # 5. Upload Hasil APK
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
