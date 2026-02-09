@@ -1,0 +1,31 @@
+[tool.briefcase]
+project_name = "Keygen 3GS"
+bundle = "com.patch3gs"
+version = "1.0.0"
+url = "https://3gspatch.com"
+license = "MIT"
+author = "Angga"
+author_email = "admin@3gspatch.com"
+
+[tool.briefcase.app.keygen3gs]
+formal_name = "Keygen 3GS"
+description = "Aplikasi Keygen PES 21"
+long_description = "Aplikasi Keygen PES 21"
+sources = ["src/keygen3gs"]
+test_sources = ["tests"]
+requires = [
+    "pycryptodome",  # Ini kuncinya! BeeWare support ini
+]
+
+[tool.briefcase.app.keygen3gs.macOS]
+requires = ["std-nslog"]
+
+[tool.briefcase.app.keygen3gs.linux]
+requires = ["pygobject>=3.30"]
+
+[tool.briefcase.app.keygen3gs.windows]
+requires = []
+
+# Pengaturan Android
+[tool.briefcase.app.keygen3gs.android]
+requires = ["toga-android>=0.3.0"]
