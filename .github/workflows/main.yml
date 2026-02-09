@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Setup Java 17 (Wajib)
+      # 1. Setup Java 17
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -31,21 +31,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev mesa-utils
 
-      # 4. HAPUS SETUP FLUTTER MANUAL (Subosito)
-      # Kita hapus langkah "Setup Flutter" biar Flet download sendiri versi 3.38.7 yang dia mau.
-      # Biar gak bentrok versi lagi.
-
+      # 4. HAPUS FLUTTER MANUAL (Biarkan Flet yang atur)
+      
       # 5. Install Flet
       - name: Install Dependencies
         run: |
           pip install flet pycryptodome
 
-      # 6. BUILD APK DENGAN "Y" YANG SOPAN
-      # "yes | head -n 20" artinya: Jawab "y" 20 kali saja, lalu diam.
-      # Ini menjawab pertanyaan install, tapi tidak bikin error Broken Pipe.
+      # 6. BUILD APK (DENGAN NAMA BARU YANG VALID!)
+      # Kita tambah flag: --project-name keygen3gs
+      # Kita pakai 'yes |' untuk berjaga-jaga kalau dia minta install/lisensi.
+      # Karena namanya sudah benar (huruf depan), Flet TIDAK AKAN CRASH, 
+      # jadi 'yes' tidak akan bikin broken pipe.
       - name: Build APK
         run: |
-          yes | head -n 20 | flet build apk --verbose
+          yes | flet build apk --project-name keygen3gs --verbose
 
       # 7. Upload Hasil
       - name: Upload Artifact
