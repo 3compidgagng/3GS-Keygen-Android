@@ -25,11 +25,12 @@ jobs:
         with:
           python-version: '3.10'
 
-      # 3. Setup Komponen Linux (Penyelamat Doctor Check)
+      # 3. Setup Komponen Linux (Biar Doctor Bersih Total)
+      # Saya tambah mesa-utils biar warning 'eglinfo' hilang
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+          sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev mesa-utils
 
       # 4. Setup Flutter
       - name: Setup Flutter
@@ -47,8 +48,8 @@ jobs:
         run: |
           pip install flet pycryptodome
 
-      # 7. BUILD APK (SUDAH BERSIH TANPA 'YES')
-      # Kita biarkan Flet berjalan normal karena Doctor sudah bilang 'No Issues'.
+      # 7. BUILD APK (PERHATIKAN: TIDAK ADA 'yes |' DISINI)
+      # Karena Doctor sudah sehat, Flet akan jalan otomatis tanpa tanya-tanya.
       - name: Build APK
         run: |
           flet build apk --verbose
