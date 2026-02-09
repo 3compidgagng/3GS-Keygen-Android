@@ -12,35 +12,53 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Siapkan Java 17 (Wajib buat Android)
+      # 1. Setup Java 17 (Wajib)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 2. Siapkan Python
+      # 2. Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      # 3. Install Library Flet
+      # 3. Setup Komponen Linux (Biar Doctor Senyum)
+      # Kita install GTK-3 biar error "Linux toolchain" hilang
+      - name: Install Linux Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+
+      # 4. Setup Flutter (Hanya untuk memancing Lisensi)
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # 5. FIX LISENSI ANDROID (INI OBAT KUATNYA)
+      # Kita pakai 'yes' untuk menyetujui semua lisensi lewat Flutter
+      - name: Accept Android Licenses
+        run: |
+          yes | flutter doctor --android-licenses
+
+      # 6. Install Flet
       - name: Install Dependencies
         run: |
           pip install flet pycryptodome
 
-      # 4. BUILD APK DENGAN "AUTO-YES" (SOLUSI ERROR TADI)
-      # Kita pakai "yes |" di depan. 
-      # Ini akan menjawab "y" terus menerus ke pertanyaan Flet.
-      # Kita hapus langkah "Setup Flutter" manual biar Flet download versi yang dia mau sendiri.
+      # 7. Build APK
+      # Kita tambahkan --verbose biar kelihatan prosesnya
       - name: Build APK
         run: |
-          yes | flet build apk --verbose
+          flet build apk --verbose
 
-      # 5. Upload Hasil APK
+      # 8. Upload Hasil
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: keygen-3gs
           path: build/apk/**/*.apk
+          if-no-files-found: warn
