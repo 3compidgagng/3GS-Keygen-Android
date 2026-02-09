@@ -1,23 +1,21 @@
 [tool.briefcase]
-project_name = "Keygen 3GS"
-bundle = "com.patch3gs"
-version = "1.1.0" 
+project_name = "Keygen 3GS Offline"
+bundle = "com.patch3gs.offline"
+version = "1.0.0"
 url = "https://3gspatch.com"
 license = "MIT"
 author = "Angga"
 author_email = "admin@3gspatch.com"
 
 [tool.briefcase.app.keygen3gs]
-formal_name = "Keygen 3GS 21"
-description = "Aplikasi Keygen PES 21"
-long_description = "Aplikasi Keygen PES 21"
+formal_name = "Keygen 3GS"
+description = "Aplikasi Keygen PES 21 Offline"
+long_description = "Aplikasi Keygen PES 21 Offline"
+# Folder tempat kode python kita
 sources = ["src/keygen3gs"]
 test_sources = ["tests"]
-# --- PERUBAHAN PENTING DISINI ---
-# Kita ganti pycryptodome jadi pyaes
-requires = [
-    "pyaes", 
-]
+# HANYA BUTUH PYAES (Ringan & Aman)
+requires = ["pyaes"]
 
 [tool.briefcase.app.keygen3gs.macOS]
 requires = ["std-nslog"]
