@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1. SETUP JAVA 11 (Wajib untuk Android API 31)
+      # 1. SETUP JAVA 11 (WAJIB)
       - name: Set up Java 11
         uses: actions/setup-java@v4
         with:
@@ -36,16 +36,16 @@ jobs:
           pip install --upgrade pip
           pip install buildozer "Cython==3.0.11"
 
-      # 4. BUILD PERTAMA (PANCINGAN)
-      # Kita jalankan ini cuma biar dia download SDK & NDK.
-      # Kita set "continue-on-error" karena ini PASTI GAGAL (Missing DX).
+      # 4. BUILD PANCINGAN (ANTI BROKEN PIPE)
+      # Kita ganti 'yes |' dengan 'echo "y" |'.
+      # Ini akan memancing download SDK, lalu membiarkan dia error dengan tenang.
       - name: Initial Build (Download SDK)
         continue-on-error: true
         run: |
-          yes | buildozer android debug || true
+          echo "y" | buildozer android debug || true
 
-      # 5. FIX ERROR "DX MISSING" & LICENSE
-      # Ini script ajaibnya. Kita cari file d8 dan kita copy jadi dx.
+      # 5. FIX ERROR "DX MISSING"
+      # Bagian ini yang paling penting. Dia akan memperbaiki SDK yang error tadi.
       - name: Fix Android SDK Bugs
         run: |
           echo "Mencari folder build-tools..."
@@ -58,13 +58,12 @@ jobs:
               fi; \
           done
           
-          # Paksa Terima Semua Lisensi (Biar gak error license)
+          # Paksa Terima Lisensi
           echo "Menerima Lisensi..."
           yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses || true
-          yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      # 6. BUILD FINAL (YANG SEBENARNYA)
-      # Sekarang dx sudah ada, harusnya lancar.
+      # 6. BUILD FINAL (APLIKASI JADI)
+      # Sekarang dx sudah ada, build ini pasti sukses.
       - name: Final Build
         run: |
           yes | buildozer android debug
