@@ -14,8 +14,11 @@ long_description = "Aplikasi Keygen PES 21 Offline"
 # Folder tempat kode python kita
 sources = ["src/keygen3gs"]
 test_sources = ["tests"]
-# HANYA BUTUH PYAES (Ringan & Aman)
-requires = []
+# --- GANTI MENJADI INI (YANG BENAR) ---
+requires = [
+    "toga>=0.3.0",           # Library Tampilan (WAJIB ADA)
+    "toga-android>=0.3.0"    # Library Khusus Android
+]
 
 [tool.briefcase.app.keygen3gs.macOS]
 requires = ["std-nslog"]
