@@ -15,7 +15,7 @@ long_description = "Aplikasi Keygen PES 21 Offline"
 sources = ["src/keygen3gs"]
 test_sources = ["tests"]
 # HANYA BUTUH PYAES (Ringan & Aman)
-requires = ["pyaes"]
+requires = []
 
 [tool.briefcase.app.keygen3gs.macOS]
 requires = ["std-nslog"]
