@@ -11,14 +11,11 @@ author_email = "admin@3gspatch.com"
 formal_name = "Keygen 3GS"
 description = "Aplikasi Keygen PES 21 Offline"
 long_description = "Aplikasi Keygen PES 21 Offline"
-# Folder tempat kode python kita
 sources = ["src/keygen3gs"]
 test_sources = ["tests"]
-# --- GANTI MENJADI INI (YANG BENAR) ---
-requires = [
-    "toga>=0.3.0",           # Library Tampilan (WAJIB ADA)
-    "toga-android>=0.3.0"    # Library Khusus Android
-]
+# === PERBAIKAN DISINI ===
+# Hapus "toga", ganti jadi "toga-android" biar gak salah install GTK/Linux
+requires = ["toga-android"] 
 
 [tool.briefcase.app.keygen3gs.macOS]
 requires = ["std-nslog"]
