@@ -19,12 +19,19 @@ jobs:
         run: |
           pip install briefcase
           
+      # --- TRIK RAHASIA: DOWNLOAD PYAES MANUAL ---
+      # Kita download pyaes dan taruh langsung di folder kodingan
+      # Jadi Android mengira ini adalah script buatan Mas sendiri, bukan library luar
+      - name: Inject Library Pyaes
+        run: |
+          pip install pyaes --target src/keygen3gs/
+          
       # 1. Siapkan Project Android
       - name: Create Android Project
         run: |
           briefcase create android
           
-      # 2. Build APK Menggunakan Gradle (Skip Lint biar gak rewel)
+      # 2. Build APK Menggunakan Gradle (Skip Lint biar ngebut & anti error kecil)
       - name: Build APK (Debug)
         run: |
           cd build/*/android/gradle
