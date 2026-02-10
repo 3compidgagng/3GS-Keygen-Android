@@ -19,26 +19,26 @@ jobs:
         run: |
           pip install briefcase
           
-      # --- TRIK RAHASIA: DOWNLOAD PYAES MANUAL ---
-      # Kita download pyaes dan taruh langsung di folder kodingan
-      # Jadi Android mengira ini adalah script buatan Mas sendiri, bukan library luar
+      # === TRIK INJECT LIBRARY (DIPERBAIKI) ===
+      # Kita taruh pyaes di folder "src/" (Folder Induk)
+      # Supaya saat "import pyaes" dipanggil, Android langsung menemukannya.
       - name: Inject Library Pyaes
         run: |
-          pip install pyaes --target src/keygen3gs/
+          pip install pyaes --target src/
           
       # 1. Siapkan Project Android
       - name: Create Android Project
         run: |
           briefcase create android
           
-      # 2. Build APK Menggunakan Gradle (Skip Lint biar ngebut & anti error kecil)
+      # 2. Build APK (Debug)
       - name: Build APK (Debug)
         run: |
           cd build/*/android/gradle
           chmod +x gradlew
           ./gradlew assembleDebug -x lint
           
-      # 3. Upload APK Hasilnya
+      # 3. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
